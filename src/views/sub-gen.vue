@@ -69,7 +69,7 @@
 import num from "./num.vue";
 import numInput from "./numInput.vue";
 export default {
-  name: "Home",
+  name: "SubGen",
   components: {
     num,
     numInput
