@@ -105,7 +105,7 @@ export default {
       let _a = this.randomNum();
       let _b = this.randomNum();
       let _temp = {};
-      if (_a + _b > this.maxNumber) {
+      if (_a + _b > this.range) {
         this.add();
       } else {
         _temp = {
