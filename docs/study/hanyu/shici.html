@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>诗词接龙小游戏</title>
+    <style>
+        body {
+            font-family: "微软雅黑", sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .question {
+            font-size: 24px;
+            color: #2c3e50;
+            margin: 20px 0;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 5px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .score {
+            font-size: 20px;
+            color: #27ae60;
+            margin-top: 20px;
+        }
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        /* 新增弹窗样式 */
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup.show {
+            display: flex;
+        }
+        .popup-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .poem-line {
+            margin: 8px 0;
+            padding: 5px;
+        }
+        .current-line {
+            background: #f1c40f;
+            border-radius: 4px;
+        }
+        .correct { color: #2ecc71; }
+        .wrong { color: #e74c3c; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div class="question" id="question"></div>
+        <div class="options" id="options"></div>
+        <div class="score" id="score">得分：0</div>
+    </div>
+
+    <!-- 诗词浮窗 -->
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="hidePopup()">&times;</span>
+            <h3 id="popup-title"></h3>
+            <p id="popup-author"></p>
+            <div id="popup-lines"></div>
+            <p id="popup-result"></p>
+        </div>
+    </div>
+
+    <script>
+        // 诗词库（示例数据）
+        const poems = [
+            {
+                title: "泊船瓜洲",
+                author: "王安石",
+                lines: ["京口瓜洲一水间", "钟山只隔数重山", "春风又绿江南岸", "明月何时照我还"]
+            },
+            {
+                title: "秋思",
+                author: "张籍",
+                lines: ["洛阳城里见秋风", "欲作家书意万重", "复恐匆匆说不尽", "行人临发又开封"]
+            },
+            {
+                title: "四时田园杂兴·其三十一",
+                author: "范成大",
+                lines: ["昼出耘田夜绩麻", "村庄儿女各当家", "童孙未解供耕织", "也傍桑阴学种瓜"]
+            },
+            {
+                title: "稚子弄冰",
+                author: "杨万里",
+                lines: ["稚子金盆脱晓冰", "彩丝穿取当银钲", "敲成玉磬穿林响", "忽作玻璃碎地声"]
+            },
+            {
+                title: "村晚",
+                author: "雷震",
+                lines: ["草满池塘水满陂", "山衔落日浸寒漪", "牧童归去横牛背", "短笛无腔信口吹"]
+            },
+            {
+                title: "游子吟",
+                author: "孟郊",
+                lines: ["慈母手中线", "游子身上衣", "临行密密缝", "意恐迟迟归", "谁言寸草心", "报得三春晖"]
+            },
+            {
+                "title": "四时田园杂兴·其三十一",
+                "author": "范成大",
+                "lines": [
+                    "昼出耘田夜绩麻",
+                    "村庄儿女各当家",
+                    "童孙未解供耕织",
+                    "也傍桑阴学种瓜"
+                ]
+            },
+            {
+                "title": "稚子弄冰",
+                "author": "杨万里",
+                "lines": [
+                    "稚子金盆脱晓冰",
+                    "彩丝穿取当银钲",
+                    "敲成玉磬穿林响",
+                    "忽作玻璃碎地声"
+                ]
+            },
+            {
+                "title": "村晚",
+                "author": "雷震",
+                "lines": [
+                    "草满池塘水满陂",
+                    "山衔落日浸寒漪",
+                    "牧童归去横牛背",
+                    "短笛无腔信口吹"
+                ]
+            },
+            {
+                "title": "从军行",
+                "author": "王昌龄",
+                "lines": [
+                    "青海长云暗雪山",
+                    "孤城遥望玉门关",
+                    "黄沙百战穿金甲",
+                    "不破楼兰终不还"
+                ]
+            },
+            {
+                "title": "秋夜将晓出篱门迎凉有感",
+                "author": "陆游",
+                "lines": [
+                    "三万里河东入海",
+                    "五千仞岳上摩天",
+                    "遗民泪尽胡尘里",
+                    "南望王师又一年"
+                ]
+            },
+            {
+                "title": "凉州词",
+                "author": "王之涣",
+                "lines": [
+                    "黄河远上白云间",
+                    "一片孤城万仞山",
+                    "羌笛何须怨杨柳",
+                    "春风不度玉门关"
+                ]
+            },
+            {
+                "title": "黄鹤楼送孟浩然之广陵",
+                "author": "李白",
+                "lines": [
+                    "故人西辞黄鹤楼",
+                    "烟花三月下扬州",
+                    "孤帆远影碧空尽",
+                    "唯见长江天际流"
+                ]
+            },
+            {
+                "title": "乡村四月",
+                "author": "翁卷",
+                "lines": [
+                    "绿遍山原白满川",
+                    "子规声里雨如烟",
+                    "乡村四月闲人少",
+                    "才了蚕桑又插田"
+                ]
+            }
+        ];
+
+        let currentQuestion = null;
+        let score = 0;
+        let allLines = [];
+
+        function initGame() {
+            allLines = poems.reduce((acc, poem) => acc.concat(poem.lines), []);
+            
+            const poem = poems[Math.floor(Math.random() * poems.length)];
+            const lineIndex = Math.floor(Math.random() * poem.lines.length);
+            currentQuestion = {
+                poem,
+                lineIndex,
+                line: poem.lines[lineIndex],
+                type: Math.random() > 0.5 ? "上句" : "下句"
+            };
+
+            // 处理边界情况
+            if (currentQuestion.lineIndex === 0) currentQuestion.type = "下句";
+            if (currentQuestion.lineIndex === poem.lines.length - 1) currentQuestion.type = "上句";
+
+            showQuestion();
+            generateOptions();
+        }
+
+        function showQuestion() {
+            const questionElem = document.getElementById("question");
+            questionElem.innerHTML = `请回答<span class="highlight">${currentQuestion.type}</span><br>"${currentQuestion.line}"`;
+        }
+
+        function generateOptions() {
+            const optionsElem = document.getElementById("options");
+            optionsElem.innerHTML = "";
+
+            // 正确答案
+            const correctIndex = currentQuestion.type === "上句" 
+                ? currentQuestion.lineIndex - 1 
+                : currentQuestion.lineIndex + 1;
+            const correctAnswer = currentQuestion.poem.lines[correctIndex];
+
+            // 错误选项
+            const wrongAnswers = allLines
+                .filter(line => line !== correctAnswer && line !== currentQuestion.line)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 2);
+
+            // 创建按钮
+            const options = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+            options.forEach(answer => {
+                const button = document.createElement("button");
+                button.textContent = answer;
+                button.onclick = () => checkAnswer(answer, correctAnswer);
+                optionsElem.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selected, correct) {
+            const popup = document.getElementById("popup");
+            const resultElem = document.getElementById("popup-result");
+            
+            // 更新得分
+            if (selected === correct) {
+                score += 10;
+                resultElem.className = "correct";
+                resultElem.textContent = "🎉 回答正确！";
+            } else {
+                resultElem.className = "wrong";
+                resultElem.textContent = `❌ 正确答案是：${correct}`;
+            }
+
+            // 显示完整诗词
+            showFullPoem(currentQuestion.poem, currentQuestion.lineIndex);
+            document.getElementById("score").textContent = `得分：${score}`;
+            popup.classList.add("show");
+        }
+
+        function showFullPoem(poem, currentIndex) {
+            document.getElementById("popup-title").textContent = poem.title;
+            document.getElementById("popup-author").textContent = "【" + poem.author + "】";
+            
+            const linesContainer = document.getElementById("popup-lines");
+            linesContainer.innerHTML = "";
+            
+            poem.lines.forEach((line, index) => {
+                const div = document.createElement("div");
+                div.className = "poem-line" + (index === currentIndex ? " current-line" : "");
+                div.textContent = line;
+                linesContainer.appendChild(div);
+            });
+        }
+
+        // 修复关闭功能
+        function hidePopup() {
+            document.getElementById("popup").classList.remove("show");
+            initGame();
+        }
+
+        // 点击外部关闭
+        document.getElementById("popup").addEventListener("click", function(e) {
+            if (e.target === this) hidePopup();
+        });
+
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
