@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>单词消消乐 - 关卡版</title>
+    <style>
+        #game-container {
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        #game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px;
+        }
+        .tile {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+            user-select: none;
+        }
+        .tile.selected {
+            background-color: #FFC107;
+            transform: scale(1.1);
+        }
+        .tile.matched {
+            background-color: #9E9E9E;
+            transform: scale(0.9);
+            opacity: 0.5;
+        }
+        #score {
+            font-size: 24px;
+            margin: 10px;
+        }
+        #level {
+            font-size: 20px;
+            color: #2196F3;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>单词消消乐（关卡版）</h1>
+        <div id="level">当前关卡：<span id="current-level">1</span></div>
+        <div id="score">得分：0</div>
+        <div id="game-grid"></div>
+        <button onclick="startGame()">新游戏</button>
+    </div>
+
+    <script>
+        // 单词库
+        const wordList = [
+    { "en": "spring", "cn": "春天" },
+    { "en": "summer", "cn": "夏天" },
+    { "en": "autumn", "cn": "秋天" },
+    { "en": "winter", "cn": "冬天" },
+    { "en": "season", "cn": "季节" },
+    { "en": "warm", "cn": "温暖的" },
+    { "en": "hot", "cn": "热的" },
+    { "en": "cool", "cn": "凉爽的" },
+    { "en": "cold", "cn": "冷的" },
+    { "en": "weather", "cn": "天气" },
+    { "en": "sunny", "cn": "晴朗的" },
+    { "en": "windy", "cn": "有风的" },
+    { "en": "cloudy", "cn": "多云的" },
+    { "en": "rainy", "cn": "下雨的" },
+    { "en": "snowy", "cn": "下雪的" },
+    { "en": "January", "cn": "一月" },
+    { "en": "February", "cn": "二月" },
+    { "en": "March", "cn": "三月" },
+    { "en": "April", "cn": "四月" },
+    { "en": "May", "cn": "五月" },
+    { "en": "June", "cn": "六月" },
+    { "en": "July", "cn": "七月" },
+    { "en": "August", "cn": "八月" },
+    { "en": "September", "cn": "九月" },
+    { "en": "October", "cn": "十月" },
+    { "en": "November", "cn": "十一月" },
+    { "en": "December", "cn": "十二月" },
+    { "en": "birthday", "cn": "生日" },
+    { "en": "party", "cn": "聚会" },
+    { "en": "invitation", "cn": "邀请" },
+    { "en": "present", "cn": "礼物" },
+    { "en": "cake", "cn": "蛋糕" },
+    { "en": "candle", "cn": "蜡烛" },
+    { "en": "song", "cn": "歌曲" },
+    { "en": "dance", "cn": "跳舞" },
+    { "en": "play", "cn": "玩" },
+    { "en": "game", "cn": "游戏" },
+    { "en": "happy", "cn": "快乐的" },
+    { "en": "sad", "cn": "悲伤的" },
+    { "en": "angry", "cn": "生气的" },
+    { "en": "tired", "cn": "疲倦的" },
+    { "en": "excited", "cn": "兴奋的" },
+    { "en": "scared", "cn": "害怕的" },
+    { "en": "surprised", "cn": "惊讶的" },
+    { "en": "feel", "cn": "感觉" },
+    { "en": "face", "cn": "脸" },
+    { "en": "eye", "cn": "眼睛" },
+    { "en": "nose", "cn": "鼻子" },
+    { "en": "mouth", "cn": "嘴巴" },
+    { "en": "ear", "cn": "耳朵" },
+    { "en": "hair", "cn": "头发" },
+    { "en": "head", "cn": "头" },
+    { "en": "hand", "cn": "手" },
+    { "en": "foot", "cn": "脚" },
+    { "en": "leg", "cn": "腿" },
+    { "en": "arm", "cn": "手臂" },
+    { "en": "body", "cn": "身体" }
+];
+
+        let currentLevel = 0;
+        let score = 0;
+        const WORDS_PER_LEVEL = 9;
+
+        function initializeGame() {
+            const start = currentLevel * WORDS_PER_LEVEL;
+            const end = start + WORDS_PER_LEVEL;
+            return wordList.slice(start, end).map((word, index) => ({
+                ...word,
+                originalIndex: start + index
+            }));
+        }
+
+        function createTiles(levelWords) {
+            let tiles = [];
+            levelWords.forEach(word => {
+                tiles.push({ id: word.originalIndex, text: word.en, lang: "en" });
+                tiles.push({ id: word.originalIndex, text: word.cn, lang: "cn" });
+            });
+            
+            // Fisher-Yates 洗牌算法
+            for (let i = tiles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+            }
+            return tiles;
+        }
+
+        function renderTiles(tiles) {
+            const gameGrid = document.getElementById("game-grid");
+            gameGrid.innerHTML = "";
+            
+            tiles.forEach(tile => {
+                const tileElement = document.createElement("div");
+                tileElement.className = "tile";
+                tileElement.textContent = tile.text;
+                tileElement.dataset.id = tile.id;
+                tileElement.dataset.lang = tile.lang;
+                tileElement.addEventListener("click", () => handleTileClick(tileElement));
+                gameGrid.appendChild(tileElement);
+            });
+        }
+
+        function handleTileClick(tile) {
+            if (tile.classList.contains("matched") || 
+                tile.classList.contains("selected")) return;
+
+            tile.classList.add("selected");
+            const selected = document.querySelectorAll(".selected");
+            
+            if (selected.length === 2) {
+                const match = checkMatch(selected[0], selected[1]);
+                if (match) {
+                    selected.forEach(t => {
+                        t.classList.replace("selected", "matched");
+                    });
+                    score += 10;
+                    document.getElementById("score").textContent = `得分：${score}`;
+                    checkLevelCompletion();
+                } else {
+                    setTimeout(() => {
+                        selected.forEach(t => t.classList.remove("selected"));
+                    }, 500);
+                }
+            }
+        }
+
+        function checkMatch(tile1, tile2) {
+            return tile1.dataset.id === tile2.dataset.id && 
+                   tile1.dataset.lang !== tile2.dataset.lang;
+        }
+
+        function checkLevelCompletion() {
+            const remaining = document.querySelectorAll(".tile:not(.matched)");
+            if (remaining.length === 0) {
+                if (hasMoreLevels()) {
+                    setTimeout(() => {
+                        currentLevel++;
+                        document.getElementById("current-level").textContent = currentLevel + 1;
+                        startLevel();
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        alert(`🎉 恭喜完成所有关卡！最终得分：${score}`);
+                    }, 500);
+                }
+            }
+        }
+
+        function hasMoreLevels() {
+            return (currentLevel + 1) * WORDS_PER_LEVEL < wordList.length;
+        }
+
+        function startLevel() {
+            const levelWords = initializeGame();
+            if (levelWords.length === 0) return;
+            const tiles = createTiles(levelWords);
+            renderTiles(tiles);
+        }
+
+        function startGame() {
+            currentLevel = 0;
+            score = 0;
+            document.getElementById("score").textContent = "得分：0";
+            document.getElementById("current-level").textContent = 1;
+            startLevel();
+        }
+
+        // 初始化游戏
+        startGame();
+    </script>
+</body>
+</html>
