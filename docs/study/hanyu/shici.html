@@ -66,6 +66,7 @@
             background: white;
             padding: 30px;
             border-radius: 10px;
+            width: 220px;
             max-width: 500px;
             position: relative;
             box-shadow: 0 0 20px rgba(0,0,0,0.2);
@@ -88,6 +89,7 @@
         .correct { color: #2ecc71; }
         .wrong { color: #e74c3c; }
         .hidden { display: none; }
+        .back-home {margin-top: 90px;text-align: center;}
     </style>
 </head>
 <body>
@@ -95,6 +97,7 @@
         <div class="question" id="question"></div>
         <div class="options" id="options"></div>
         <div class="score" id="score">得分：0</div>
+        <div class="back-home"><a href="/">返回首页</a></div>
     </div>
 
     <!-- 诗词浮窗 -->
@@ -110,122 +113,21 @@
 
     <script>
         // 诗词库（示例数据）
-        const poems = [
-            {
-                title: "泊船瓜洲",
-                author: "王安石",
-                lines: ["京口瓜洲一水间", "钟山只隔数重山", "春风又绿江南岸", "明月何时照我还"]
-            },
-            {
-                title: "秋思",
-                author: "张籍",
-                lines: ["洛阳城里见秋风", "欲作家书意万重", "复恐匆匆说不尽", "行人临发又开封"]
-            },
-            {
-                title: "四时田园杂兴·其三十一",
-                author: "范成大",
-                lines: ["昼出耘田夜绩麻", "村庄儿女各当家", "童孙未解供耕织", "也傍桑阴学种瓜"]
-            },
-            {
-                title: "稚子弄冰",
-                author: "杨万里",
-                lines: ["稚子金盆脱晓冰", "彩丝穿取当银钲", "敲成玉磬穿林响", "忽作玻璃碎地声"]
-            },
-            {
-                title: "村晚",
-                author: "雷震",
-                lines: ["草满池塘水满陂", "山衔落日浸寒漪", "牧童归去横牛背", "短笛无腔信口吹"]
-            },
-            {
-                title: "游子吟",
-                author: "孟郊",
-                lines: ["慈母手中线", "游子身上衣", "临行密密缝", "意恐迟迟归", "谁言寸草心", "报得三春晖"]
-            },
-            {
-                "title": "四时田园杂兴·其三十一",
-                "author": "范成大",
-                "lines": [
-                    "昼出耘田夜绩麻",
-                    "村庄儿女各当家",
-                    "童孙未解供耕织",
-                    "也傍桑阴学种瓜"
-                ]
-            },
-            {
-                "title": "稚子弄冰",
-                "author": "杨万里",
-                "lines": [
-                    "稚子金盆脱晓冰",
-                    "彩丝穿取当银钲",
-                    "敲成玉磬穿林响",
-                    "忽作玻璃碎地声"
-                ]
-            },
-            {
-                "title": "村晚",
-                "author": "雷震",
-                "lines": [
-                    "草满池塘水满陂",
-                    "山衔落日浸寒漪",
-                    "牧童归去横牛背",
-                    "短笛无腔信口吹"
-                ]
-            },
-            {
-                "title": "从军行",
-                "author": "王昌龄",
-                "lines": [
-                    "青海长云暗雪山",
-                    "孤城遥望玉门关",
-                    "黄沙百战穿金甲",
-                    "不破楼兰终不还"
-                ]
-            },
-            {
-                "title": "秋夜将晓出篱门迎凉有感",
-                "author": "陆游",
-                "lines": [
-                    "三万里河东入海",
-                    "五千仞岳上摩天",
-                    "遗民泪尽胡尘里",
-                    "南望王师又一年"
-                ]
-            },
-            {
-                "title": "凉州词",
-                "author": "王之涣",
-                "lines": [
-                    "黄河远上白云间",
-                    "一片孤城万仞山",
-                    "羌笛何须怨杨柳",
-                    "春风不度玉门关"
-                ]
-            },
-            {
-                "title": "黄鹤楼送孟浩然之广陵",
-                "author": "李白",
-                "lines": [
-                    "故人西辞黄鹤楼",
-                    "烟花三月下扬州",
-                    "孤帆远影碧空尽",
-                    "唯见长江天际流"
-                ]
-            },
-            {
-                "title": "乡村四月",
-                "author": "翁卷",
-                "lines": [
-                    "绿遍山原白满川",
-                    "子规声里雨如烟",
-                    "乡村四月闲人少",
-                    "才了蚕桑又插田"
-                ]
-            }
-        ];
+        let poems = [];
 
         let currentQuestion = null;
         let score = 0;
         let allLines = [];
+
+        function getJSONData(jsonName) {
+            fetch(jsonName+'.json')
+            .then(response => response.json())
+            .then(data => {
+                poems = data;
+                initGame(); // 加载完成后开始游戏
+            })
+            .catch(error => console.error('Error loading words.json:', error));
+        }
 
         function initGame() {
             allLines = poems.reduce((acc, poem) => acc.concat(poem.lines), []);
@@ -300,7 +202,7 @@
 
         function showFullPoem(poem, currentIndex) {
             document.getElementById("popup-title").textContent = poem.title;
-            document.getElementById("popup-author").textContent = "【" + poem.author + "】";
+            document.getElementById("popup-author").textContent = poem.dynasty + "【" + poem.author + "】";
             
             const linesContainer = document.getElementById("popup-lines");
             linesContainer.innerHTML = "";
@@ -325,7 +227,9 @@
         });
 
         // 启动游戏
-        initGame();
+        // initGame();
+        getJSONData('52');
+
     </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>单词消消乐 - 关卡版</title>
+    <title>消消乐 - 关卡版</title>
     <style>
         #game-container {
             max-width: 600px;
@@ -13,8 +13,8 @@
         #game-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 20px;
+            gap: 7px;
+            margin: 10px;
         }
         .tile {
             background-color: #4CAF50;
@@ -51,78 +51,67 @@
             border: none;
             border-radius: 5px;
         }
+        .class-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            margin: 20px;
+        }
+        /* .tile[data-lang="en"]:hover::after {
+            content: attr(data-ipa);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        } */
+        .back-home {margin-top: 90px;text-align: center;}
     </style>
 </head>
 <body>
     <div id="game-container">
         <h1>单词消消乐（关卡版）</h1>
+        <div class="class-list"></div>
         <div id="level">当前关卡：<span id="current-level">1</span></div>
         <div id="score">得分：0</div>
         <div id="game-grid"></div>
-        <button onclick="startGame()">新游戏</button>
+        <button onclick="startGame()">重新游戏</button>
+        <div class="back-home"><a href="/">返回首页</a></div>
     </div>
 
     <script>
+        const classArr = [{
+                jsonName: '51',
+                title: '5年级上册'
+            },
+            {
+                jsonName: '52',
+                title: '5年级下册'
+            }
+        ]
+        classArr.forEach((item, index) => {
+            const classItem = document.createElement('div');
+            classItem.className = 'class-item';
+            classItem.textContent = item.title;
+            classItem.addEventListener('click', () => {
+                currentLevel = 0;
+                document.getElementById('current-level').textContent = currentLevel + 1;
+                getJSONData(classArr[index].jsonName);
+            });
+            document.querySelector('.class-list').appendChild(classItem);
+
+        })
+
         // 单词库
-        const wordList = [
-    { "en": "spring", "cn": "春天" },
-    { "en": "summer", "cn": "夏天" },
-    { "en": "autumn", "cn": "秋天" },
-    { "en": "winter", "cn": "冬天" },
-    { "en": "season", "cn": "季节" },
-    { "en": "warm", "cn": "温暖的" },
-    { "en": "hot", "cn": "热的" },
-    { "en": "cool", "cn": "凉爽的" },
-    { "en": "cold", "cn": "冷的" },
-    { "en": "weather", "cn": "天气" },
-    { "en": "sunny", "cn": "晴朗的" },
-    { "en": "windy", "cn": "有风的" },
-    { "en": "cloudy", "cn": "多云的" },
-    { "en": "rainy", "cn": "下雨的" },
-    { "en": "snowy", "cn": "下雪的" },
-    { "en": "January", "cn": "一月" },
-    { "en": "February", "cn": "二月" },
-    { "en": "March", "cn": "三月" },
-    { "en": "April", "cn": "四月" },
-    { "en": "May", "cn": "五月" },
-    { "en": "June", "cn": "六月" },
-    { "en": "July", "cn": "七月" },
-    { "en": "August", "cn": "八月" },
-    { "en": "September", "cn": "九月" },
-    { "en": "October", "cn": "十月" },
-    { "en": "November", "cn": "十一月" },
-    { "en": "December", "cn": "十二月" },
-    { "en": "birthday", "cn": "生日" },
-    { "en": "party", "cn": "聚会" },
-    { "en": "invitation", "cn": "邀请" },
-    { "en": "present", "cn": "礼物" },
-    { "en": "cake", "cn": "蛋糕" },
-    { "en": "candle", "cn": "蜡烛" },
-    { "en": "song", "cn": "歌曲" },
-    { "en": "dance", "cn": "跳舞" },
-    { "en": "play", "cn": "玩" },
-    { "en": "game", "cn": "游戏" },
-    { "en": "happy", "cn": "快乐的" },
-    { "en": "sad", "cn": "悲伤的" },
-    { "en": "angry", "cn": "生气的" },
-    { "en": "tired", "cn": "疲倦的" },
-    { "en": "excited", "cn": "兴奋的" },
-    { "en": "scared", "cn": "害怕的" },
-    { "en": "surprised", "cn": "惊讶的" },
-    { "en": "feel", "cn": "感觉" },
-    { "en": "face", "cn": "脸" },
-    { "en": "eye", "cn": "眼睛" },
-    { "en": "nose", "cn": "鼻子" },
-    { "en": "mouth", "cn": "嘴巴" },
-    { "en": "ear", "cn": "耳朵" },
-    { "en": "hair", "cn": "头发" },
-    { "en": "head", "cn": "头" },
-    { "en": "hand", "cn": "手" },
-    { "en": "foot", "cn": "脚" },
-    { "en": "leg", "cn": "腿" },
-    { "en": "arm", "cn": "手臂" },
-    { "en": "body", "cn": "身体" }
-];
+        let wordList = [];
+
+        function getJSONData(jsonName) {
+            fetch(jsonName+'.json')
+            .then(response => response.json())
+            .then(data => {
+                wordList = data;
+                startGame(); // 加载完成后开始游戏
+            })
+            .catch(error => console.error('Error loading words.json:', error));
+        }
 
         let currentLevel = 0;
         let score = 0;
@@ -140,7 +129,7 @@
         function createTiles(levelWords) {
             let tiles = [];
             levelWords.forEach(word => {
-                tiles.push({ id: word.originalIndex, text: word.en, lang: "en" });
+                tiles.push({ id: word.originalIndex, text: word.en, lang: "en", ipa: word.ipa });
                 tiles.push({ id: word.originalIndex, text: word.cn, lang: "cn" });
             });
             
@@ -162,6 +151,9 @@
                 tileElement.textContent = tile.text;
                 tileElement.dataset.id = tile.id;
                 tileElement.dataset.lang = tile.lang;
+                if (tile.lang === "en") {
+                    tileElement.dataset.ipa = tile.ipa;
+                }
                 tileElement.addEventListener("click", () => handleTileClick(tileElement));
                 gameGrid.appendChild(tileElement);
             });
@@ -224,6 +216,10 @@
             renderTiles(tiles);
         }
 
+        function defaultGame() {
+            getJSONData(classArr[classArr.length - 1].jsonName);
+        }
+
         function startGame() {
             currentLevel = 0;
             score = 0;
@@ -233,7 +229,7 @@
         }
 
         // 初始化游戏
-        startGame();
+        defaultGame();
     </script>
 </body>
 </html>
